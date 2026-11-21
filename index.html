@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -14,106 +14,124 @@ html{scroll-padding-top:env(safe-area-inset-top,0px)}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:Georgia,"Times New Roman",serif;line-height:1.5;min-height:100vh}
 main{max-width:520px;margin:0 auto;padding:28px 18px 48px}
-h1{font-size:2rem;text-align:center;margin:.2em 0 0;letter-spacing:.5px}
+h1{font-size:2rem;text-align:center;margin:.2em 0 0}
 .sub{text-align:center;color:var(--mut);margin:0 0 24px;font-style:italic}
 .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:16px}
 h2{margin:0 0 10px;font-size:1.25rem}
 button{font:inherit;cursor:pointer;border-radius:10px;border:1px solid var(--red);background:var(--red);color:#fff;padding:12px 18px;width:100%;margin-top:10px}
 button:hover{background:var(--red2)}
+button:disabled{opacity:.6;cursor:wait}
 button.ghost{background:transparent;color:var(--red)}
 button.ghost:hover{background:var(--line)}
+button.mini{width:auto;padding:4px 10px;margin:0;font-size:.8rem}
 input{font:inherit;width:100%;padding:11px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);margin-top:8px}
-label{color:var(--mut);font-size:.95rem}
+label,.tag{color:var(--mut);font-size:.95rem}
+.tag{font-size:.8rem}
 .msg{margin-top:12px;color:var(--red);min-height:1.2em}
 .ok{color:var(--ok)}
 .big{font-size:2rem;text-align:center;margin:14px 0;font-weight:bold;color:var(--red)}
 ul{list-style:none;padding:0;margin:0}
-li{display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px solid var(--line)}
+li{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line)}
 li:last-child{border:0}
-.tag{font-size:.8rem;color:var(--mut)}
 .back{background:none;border:0;color:var(--mut);width:auto;padding:4px 0;margin:0 0 12px;text-decoration:underline}
 .back:hover{background:none;color:var(--ink)}
+code{background:var(--line);padding:1px 5px;border-radius:4px}
 </style>
 </head>
 <body>
 <main>
 <h1>🎁 Olentzero Secreto</h1>
-<p class="sub">Who will Olentzero ask you to gift?</p>
+<p class="sub">¿A quién te pedirá Olentzero que le regales?</p>
+
+<section id="setup" hidden>
+  <div class="card"><h2>Falta configurar la base de datos</h2>
+  <p>Abre este archivo con un editor de texto y pega la dirección de tu Firebase Realtime Database en <code>FIREBASE_URL</code>, al principio del bloque <code>&lt;script&gt;</code>.</p></div>
+</section>
 
 <section id="home">
-  <div class="card"><h2>Find your recipient</h2><p class="tag">Type your name to see who you gift to. You can only see it once.</p>
-  <button onclick="go('player')">I’m a participant</button></div>
-  <div class="card"><h2>Administrator</h2>
-  <button class="ghost" onclick="go('admin')">Set up &amp; shuffle</button>
-  <button class="ghost" onclick="go('review')">Review pairing results</button></div>
+  <div class="card"><h2>Descubre a quién regalas</h2><p class="tag">Escribe tu nombre para ver tu amigo invisible. Solo puedes verlo una vez.</p>
+  <button onclick="go('player')">Soy participante</button></div>
+  <div class="card"><h2>Administrador</h2>
+  <button class="ghost" onclick="go('admin')">Preparar y barajar</button>
+  <button class="ghost" onclick="go('review')">Revisar resultados del sorteo</button></div>
 </section>
 
 <section id="gate" hidden>
-  <button class="back" onclick="go('home')">← Back</button>
-  <div class="card"><h2 id="gateTitle">Administrator code</h2>
-  <label for="code">Enter the code</label>
+  <button class="back" onclick="go('home')">← Volver</button>
+  <div class="card"><h2 id="gateTitle"></h2>
+  <label for="code">Introduce el código</label>
   <input id="code" type="password" inputmode="numeric" autocomplete="off" onkeydown="if(event.key==='Enter')unlock()">
-  <button onclick="unlock()">Enter</button><div class="msg" id="gateMsg"></div></div>
+  <button onclick="unlock()">Entrar</button><div class="msg" id="gateMsg"></div></div>
 </section>
 
 <section id="player" hidden>
-  <button class="back" onclick="go('home')">← Back</button>
+  <button class="back" onclick="go('home')">← Volver</button>
   <div class="card" id="playerBox">
-    <h2>Who are you?</h2>
-    <label for="myname">Your name</label>
+    <h2>¿Quién eres?</h2>
+    <label for="myname">Tu nombre</label>
     <input id="myname" autocomplete="off" onkeydown="if(event.key==='Enter')reveal()">
-    <button onclick="reveal()">Show who I gift to</button>
+    <button id="revBtn" onclick="reveal()">Ver a quién regalo</button>
     <div class="msg" id="pMsg"></div>
   </div>
   <div class="card" id="resultBox" hidden>
-    <p style="text-align:center;margin:0">You are gifting to…</p>
+    <p style="text-align:center;margin:0">Tienes que regalar a…</p>
     <div class="big" id="target"></div>
-    <p class="tag" style="text-align:center">This is shown only once. Remember it, then tap the button to hide it.</p>
-    <button onclick="hideResult()">I’ve got it — hide</button>
+    <p class="tag" style="text-align:center">Solo se muestra una vez. Apúntalo y pulsa el botón para ocultarlo.</p>
+    <button onclick="hideResult()">Ya lo tengo — ocultar</button>
   </div>
 </section>
 
 <section id="admin" hidden>
-  <button class="back" onclick="go('home')">← Back</button>
+  <button class="back" onclick="go('home')">← Volver</button>
   <div class="card" id="adminBody"></div>
 </section>
 
 <section id="review" hidden>
-  <button class="back" onclick="go('home')">← Back</button>
+  <button class="back" onclick="go('home')">← Volver</button>
   <div class="card" id="reviewBody"></div>
 </section>
 </main>
 
 <script>
-var KEY='olentzero-secreto-v1', mem=null, unlocked={admin:false,review:false}, gateTarget='admin';
-function blank(){return {names:[],pairs:null,seen:{}}}
-function load(){try{var r=localStorage.getItem(KEY);if(r)return JSON.parse(r)}catch(e){}return mem||blank()}
-function save(){mem=S;try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
-var S=load();
+/* ===== CONFIGURACIÓN: pega aquí la URL de tu Firebase Realtime Database ===== */
+var FIREBASE_URL = "https://olentzero-secreto-default-rtdb.europe-west1.firebasedatabase.app/";
+/* ============================================================================ */
+
+var DB = FIREBASE_URL.replace(/\/$/,'') + '/olentzero';
+var unlocked={admin:false,review:false}, gateTarget='admin', CONNERR='No se pudo conectar con la base de datos. Revisa tu conexión e inténtalo de nuevo.';
 function $(id){return document.getElementById(id)}
 function esc(s){return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+function norm(s){return s.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')}
 
-function show(id){['home','gate','player','admin','review'].forEach(function(x){$(x).hidden=x!==id})}
-function go(name){
-  S=load();
+/* ---- Base de datos (API REST de Firebase) ---- */
+function api(path,method,body,extra){
+  var o={method:method||'GET'};
+  if(body!==undefined){o.body=JSON.stringify(body);o.headers=Object.assign({'Content-Type':'application/json'},extra||{})}
+  return fetch(DB+path+'.json',o);
+}
+async function getAll(){var r=await api('');if(!r.ok)throw new Error('http');return await r.json()}
+
+function show(id){['setup','home','gate','player','admin','review'].forEach(function(x){$(x).hidden=x!==id})}
+async function go(name){
+  if(FIREBASE_URL.indexOf('TU-PROYECTO')>-1){show('setup');return}
   if(name==='home'){unlocked={admin:false,review:false};show('home');return}
   if((name==='admin'||name==='review')&&!unlocked[name]){
-    gateTarget=name;$('gateTitle').textContent=name==='admin'?'Administrator code':'Review results — enter code';
+    gateTarget=name;$('gateTitle').textContent=name==='admin'?'Código de administrador':'Revisar resultados — introduce el código';
     $('code').value='';$('gateMsg').textContent='';show('gate');$('code').focus();return}
-  if(name==='player'){$('myname').value='';$('pMsg').textContent='';$('resultBox').hidden=true;$('playerBox').hidden=false}
-  if(name==='admin')renderAdmin();
-  if(name==='review')renderReview();
+  if(name==='player'){$('myname').value='';$('pMsg').textContent='';$('resultBox').hidden=true;$('playerBox').hidden=false;show('player');return}
   show(name);
+  if(name==='admin')await renderAdmin();
+  if(name==='review')await renderReview();
 }
 function unlock(){
   if($('code').value==='0000'){unlocked[gateTarget]=true;go(gateTarget)}
-  else{$('gateMsg').textContent='Wrong code.'}
+  else{$('gateMsg').textContent='Código incorrecto.'}
 }
 
-/* ---- Randomness ---- */
+/* ---- Aleatoriedad ---- */
 function rnd(n){var a=new Uint32Array(1),lim=Math.floor(4294967296/n)*n;
   do{crypto.getRandomValues(a)}while(a[0]>=lim);return a[0]%n}
-/* Uniformly random permutation with no self-gifts and no A<->B swaps (rejection sampling) */
+/* Permutación aleatoria uniforme: nadie se regala a sí mismo ni hay parejas cruzadas A<->B */
 function draw(n){
   for(;;){
     var p=[];for(var i=0;i<n;i++)p.push(i);
@@ -123,69 +141,88 @@ function draw(n){
   }
 }
 
-/* ---- Participant ---- */
-function reveal(){
-  var v=$('myname').value.trim().toLowerCase(),m=$('pMsg');m.textContent='';
-  if(!v){m.textContent='Please type your name.';return}
-  if(!S.pairs){m.textContent='The draw has not been done yet. Ask the administrator.';return}
-  var idx=S.names.findIndex(function(n){return n.trim().toLowerCase()===v});
-  if(idx<0){m.textContent='Name not found. Check the spelling.';return}
-  if(S.seen[idx]){m.textContent='This name has already seen its result. Ask the administrator if there is a problem.';return}
-  S.seen[idx]=true;save();
-  $('target').textContent=S.names[S.pairs[idx]];
-  $('playerBox').hidden=true;$('resultBox').hidden=false;
+/* ---- Participante ---- */
+async function reveal(){
+  var v=norm($('myname').value),m=$('pMsg'),b=$('revBtn');m.textContent='';
+  if(!v){m.textContent='Escribe tu nombre.';return}
+  b.disabled=true;
+  try{
+    var d=await getAll();
+    if(!d||!d.pairs){m.textContent='Todavía no se ha hecho el sorteo. Pregunta al administrador.';return}
+    var idx=d.names.findIndex(function(n){return norm(n)===v});
+    if(idx<0){m.textContent='No encuentro ese nombre. Revisa cómo lo has escrito.';return}
+    if(d.seen&&d.seen['p'+idx]){m.textContent='Este nombre ya ha visto su resultado. Si hubo algún problema, pide al administrador que lo restablezca.';return}
+    /* Escritura condicional: solo funciona si nadie la ha hecho antes (una sola vez, desde cualquier dispositivo) */
+    var r=await api('/seen/p'+idx,'PUT',true,{'if-match':'null_etag'});
+    if(r.status===412){m.textContent='Este nombre ya ha visto su resultado. Si hubo algún problema, pide al administrador que lo restablezca.';return}
+    if(!r.ok)throw new Error('http');
+    $('target').textContent=d.names[d.pairs[idx]];
+    $('playerBox').hidden=true;$('resultBox').hidden=false;
+  }catch(e){m.textContent=CONNERR}
+  finally{b.disabled=false}
 }
 function hideResult(){$('target').textContent='';go('player')}
 
-/* ---- Admin ---- */
-function renderAdmin(){
-  var d=$('adminBody');
-  if(S.pairs){
-    var n=S.names.length,seen=Object.keys(S.seen).length;
-    d.innerHTML='<h2>Draw is ready ✓</h2><p>'+n+' participants. '+seen+' of '+n+' have seen their result.</p>'+
-    '<button onclick="reshuffle()">Reshuffle (resets who has seen)</button>'+
-    '<button class="ghost" onclick="go(\'review\')">Review pairing results</button>'+
-    '<button class="ghost" onclick="startOver()">Start over (new participants)</button><div class="msg" id="aMsg"></div>';
-    return;
+/* ---- Administrador ---- */
+async function renderAdmin(){
+  var d=$('adminBody');d.innerHTML='<p>Cargando…</p>';
+  var data;try{data=await getAll()}catch(e){d.innerHTML='<div class="msg">'+CONNERR+'</div>';return}
+  if(data&&data.pairs){
+    var n=data.names.length,seen=data.names.filter(function(_,i){return data.seen&&data.seen['p'+i]}).length;
+    d.innerHTML='<h2>Sorteo listo ✓</h2><p>'+n+' participantes. '+seen+' de '+n+' ya han visto su resultado.</p>'+
+    '<button onclick="reshuffle()">Volver a barajar (reinicia quién ha visto)</button>'+
+    '<button class="ghost" onclick="go(\'review\')">Revisar resultados del sorteo</button>'+
+    '<button class="ghost" onclick="startOver()">Empezar de nuevo (otros participantes)</button><div class="msg" id="aMsg"></div>';
+    window._names=data.names;return;
   }
-  d.innerHTML='<h2>Set up the draw</h2><label for="cnt">How many participants? (3–60)</label>'+
-  '<input id="cnt" type="number" min="3" max="60" inputmode="numeric" value="'+(S.names.length||'')+'">'+
-  '<button class="ghost" onclick="makeFields()">Create name fields</button><div id="fields"></div><div class="msg" id="aMsg"></div>';
-  if(S.names.length)makeFields();
+  d.innerHTML='<h2>Preparar el sorteo</h2><label for="cnt">¿Cuántos participantes? (3–60)</label>'+
+  '<input id="cnt" type="number" min="3" max="60" inputmode="numeric">'+
+  '<button class="ghost" onclick="makeFields()">Crear casillas de nombres</button><div id="fields"></div><div class="msg" id="aMsg"></div>';
 }
 function makeFields(){
   var n=parseInt($('cnt').value,10),m=$('aMsg');
-  if(!(n>=3&&n<=60)){m.textContent='Enter a number between 3 and 60.';return}
+  if(!(n>=3&&n<=60)){m.textContent='Introduce un número entre 3 y 60.';return}
   m.textContent='';var old=[].slice.call(document.querySelectorAll('.nm')).map(function(i){return i.value});
-  var h='';for(var i=0;i<n;i++)h+='<input class="nm" placeholder="Participant '+(i+1)+'" value="'+esc(old[i]!==undefined?old[i]:(S.names[i]||''))+'">';
-  $('fields').innerHTML=h+'<button onclick="doShuffle()">🔀 Shuffle</button>';
+  var h='';for(var i=0;i<n;i++)h+='<input class="nm" placeholder="Participante '+(i+1)+'" value="'+esc(old[i]||'')+'">';
+  $('fields').innerHTML=h+'<button onclick="doShuffle()">🔀 Barajar</button>';
 }
-function doShuffle(){
+async function save(names){
+  var r=await api('','PUT',{names:names,pairs:draw(names.length)});
+  if(!r.ok)throw new Error('http');
+}
+async function doShuffle(){
   var names=[].slice.call(document.querySelectorAll('.nm')).map(function(i){return i.value.trim()}),m=$('aMsg');
-  if(names.some(function(x){return !x})){m.textContent='Every participant needs a name.';return}
-  var low=names.map(function(x){return x.toLowerCase()});
-  if(low.some(function(x,i){return low.indexOf(x)!==i})){m.textContent='Names must be unique (add an initial if two people share one).';return}
-  S={names:names,pairs:draw(names.length),seen:{}};save();renderAdmin();
+  if(names.some(function(x){return !x})){m.textContent='Todos los participantes necesitan un nombre.';return}
+  var low=names.map(norm);
+  if(low.some(function(x,i){return low.indexOf(x)!==i})){m.textContent='Los nombres no pueden repetirse (añade una inicial si dos personas se llaman igual).';return}
+  try{await save(names);await renderAdmin()}catch(e){m.textContent=CONNERR}
 }
-function reshuffle(){
-  if(!confirm('Reshuffle? Previous pairings are discarded and everyone can look again.'))return;
-  S.pairs=draw(S.names.length);S.seen={};save();renderAdmin();
-  $('aMsg').className='msg ok';$('aMsg').textContent='Reshuffled ✓';
+async function reshuffle(){
+  if(!confirm('¿Volver a barajar? Se descartan las parejas anteriores y todos podrán consultar de nuevo.'))return;
+  try{await save(window._names);await renderAdmin();$('aMsg').className='msg ok';$('aMsg').textContent='Barajado de nuevo ✓'}
+  catch(e){$('aMsg').textContent=CONNERR}
 }
-function startOver(){
-  if(!confirm('Delete all participants and results?'))return;
-  S=blank();save();renderAdmin();
+async function startOver(){
+  if(!confirm('¿Borrar todos los participantes y resultados?'))return;
+  try{var r=await api('','DELETE');if(!r.ok)throw 0;await renderAdmin()}catch(e){$('aMsg').textContent=CONNERR}
 }
 
-/* ---- Review (separate code) ---- */
-function renderReview(){
-  var d=$('reviewBody');
-  if(!S.pairs){d.innerHTML='<h2>Pairing results</h2><p>No draw yet.</p>';return}
-  var h='<h2>Pairing results</h2><ul>';
-  S.names.forEach(function(nm,i){
-    h+='<li><span>'+esc(nm)+' → <b>'+esc(S.names[S.pairs[i]])+'</b></span><span class="tag">'+(S.seen[i]?'seen':'not seen')+'</span></li>'});
-  d.innerHTML=h+'</ul>';
+/* ---- Revisión (código aparte) ---- */
+async function renderReview(){
+  var d=$('reviewBody');d.innerHTML='<p>Cargando…</p>';
+  var data;try{data=await getAll()}catch(e){d.innerHTML='<div class="msg">'+CONNERR+'</div>';return}
+  if(!data||!data.pairs){d.innerHTML='<h2>Resultados del sorteo</h2><p>Todavía no hay sorteo.</p>';return}
+  var h='<h2>Resultados del sorteo</h2><ul>';
+  data.names.forEach(function(nm,i){
+    var s=data.seen&&data.seen['p'+i];
+    h+='<li><span>'+esc(nm)+' → <b>'+esc(data.names[data.pairs[i]])+'</b></span><span class="tag">'+(s?'visto <button class="mini ghost" onclick="resetOne('+i+')">Restablecer</button>':'sin ver')+'</span></li>'});
+  d.innerHTML=h+'</ul><div class="msg" id="rMsg"></div><p class="tag">«Restablecer» permite a esa persona volver a ver su resultado (por ejemplo, si se le cerró la página).</p>';
 }
+async function resetOne(i){
+  try{var r=await api('/seen/p'+i,'DELETE');if(!r.ok)throw 0;await renderReview()}catch(e){$('rMsg').textContent=CONNERR}
+}
+
+if(FIREBASE_URL.indexOf('TU-PROYECTO')>-1)show('setup');
 </script>
 </body>
 </html>
