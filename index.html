@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Olentzero Secreto</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8E%81%3C/text%3E%3C/svg%3E">
+<style>
+:root{--bg:#f6efe3;--card:#fffaf1;--ink:#2b2420;--mut:#7a6c60;--red:#b3261e;--red2:#8f1d17;--line:#e2d5c1;--ok:#2e7d4f;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1c1816;--card:#262120;--ink:#f1e8da;--mut:#a89a8c;--red:#e0584f;--red2:#c9453c;--line:#3a322e;--ok:#6fcf97;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#1c1816;--card:#262120;--ink:#f1e8da;--mut:#a89a8c;--red:#e0584f;--red2:#c9453c;--line:#3a322e;--ok:#6fcf97;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Georgia,"Times New Roman",serif;line-height:1.5;min-height:100vh}
+main{max-width:520px;margin:0 auto;padding:28px 18px 48px}
+h1{font-size:2rem;text-align:center;margin:.2em 0 0;letter-spacing:.5px}
+.sub{text-align:center;color:var(--mut);margin:0 0 24px;font-style:italic}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:16px}
+h2{margin:0 0 10px;font-size:1.25rem}
+button{font:inherit;cursor:pointer;border-radius:10px;border:1px solid var(--red);background:var(--red);color:#fff;padding:12px 18px;width:100%;margin-top:10px}
+button:hover{background:var(--red2)}
+button.ghost{background:transparent;color:var(--red)}
+button.ghost:hover{background:var(--line)}
+input{font:inherit;width:100%;padding:11px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);margin-top:8px}
+label{color:var(--mut);font-size:.95rem}
+.msg{margin-top:12px;color:var(--red);min-height:1.2em}
+.ok{color:var(--ok)}
+.big{font-size:2rem;text-align:center;margin:14px 0;font-weight:bold;color:var(--red)}
+ul{list-style:none;padding:0;margin:0}
+li{display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px solid var(--line)}
+li:last-child{border:0}
+.tag{font-size:.8rem;color:var(--mut)}
+.back{background:none;border:0;color:var(--mut);width:auto;padding:4px 0;margin:0 0 12px;text-decoration:underline}
+.back:hover{background:none;color:var(--ink)}
+</style>
+</head>
+<body>
+<main>
+<h1>🎁 Olentzero Secreto</h1>
+<p class="sub">Who will Olentzero ask you to gift?</p>
+
+<section id="home">
+  <div class="card"><h2>Find your recipient</h2><p class="tag">Type your name to see who you gift to. You can only see it once.</p>
+  <button onclick="go('player')">I’m a participant</button></div>
+  <div class="card"><h2>Administrator</h2>
+  <button class="ghost" onclick="go('admin')">Set up &amp; shuffle</button>
+  <button class="ghost" onclick="go('review')">Review pairing results</button></div>
+</section>
+
+<section id="gate" hidden>
+  <button class="back" onclick="go('home')">← Back</button>
+  <div class="card"><h2 id="gateTitle">Administrator code</h2>
+  <label for="code">Enter the code</label>
+  <input id="code" type="password" inputmode="numeric" autocomplete="off" onkeydown="if(event.key==='Enter')unlock()">
+  <button onclick="unlock()">Enter</button><div class="msg" id="gateMsg"></div></div>
+</section>
+
+<section id="player" hidden>
+  <button class="back" onclick="go('home')">← Back</button>
+  <div class="card" id="playerBox">
+    <h2>Who are you?</h2>
+    <label for="myname">Your name</label>
+    <input id="myname" autocomplete="off" onkeydown="if(event.key==='Enter')reveal()">
+    <button onclick="reveal()">Show who I gift to</button>
+    <div class="msg" id="pMsg"></div>
+  </div>
+  <div class="card" id="resultBox" hidden>
+    <p style="text-align:center;margin:0">You are gifting to…</p>
+    <div class="big" id="target"></div>
+    <p class="tag" style="text-align:center">This is shown only once. Remember it, then tap the button to hide it.</p>
+    <button onclick="hideResult()">I’ve got it — hide</button>
+  </div>
+</section>
+
+<section id="admin" hidden>
+  <button class="back" onclick="go('home')">← Back</button>
+  <div class="card" id="adminBody"></div>
+</section>
+
+<section id="review" hidden>
+  <button class="back" onclick="go('home')">← Back</button>
+  <div class="card" id="reviewBody"></div>
+</section>
+</main>
+
+<script>
+var KEY='olentzero-secreto-v1', mem=null, unlocked={admin:false,review:false}, gateTarget='admin';
+function blank(){return {names:[],pairs:null,seen:{}}}
+function load(){try{var r=localStorage.getItem(KEY);if(r)return JSON.parse(r)}catch(e){}return mem||blank()}
+function save(){mem=S;try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+var S=load();
+function $(id){return document.getElementById(id)}
+function esc(s){return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+
+function show(id){['home','gate','player','admin','review'].forEach(function(x){$(x).hidden=x!==id})}
+function go(name){
+  S=load();
+  if(name==='home'){unlocked={admin:false,review:false};show('home');return}
+  if((name==='admin'||name==='review')&&!unlocked[name]){
+    gateTarget=name;$('gateTitle').textContent=name==='admin'?'Administrator code':'Review results — enter code';
+    $('code').value='';$('gateMsg').textContent='';show('gate');$('code').focus();return}
+  if(name==='player'){$('myname').value='';$('pMsg').textContent='';$('resultBox').hidden=true;$('playerBox').hidden=false}
+  if(name==='admin')renderAdmin();
+  if(name==='review')renderReview();
+  show(name);
+}
+function unlock(){
+  if($('code').value==='0000'){unlocked[gateTarget]=true;go(gateTarget)}
+  else{$('gateMsg').textContent='Wrong code.'}
+}
+
+/* ---- Randomness ---- */
+function rnd(n){var a=new Uint32Array(1),lim=Math.floor(4294967296/n)*n;
+  do{crypto.getRandomValues(a)}while(a[0]>=lim);return a[0]%n}
+/* Uniformly random permutation with no self-gifts and no A<->B swaps (rejection sampling) */
+function draw(n){
+  for(;;){
+    var p=[];for(var i=0;i<n;i++)p.push(i);
+    for(i=n-1;i>0;i--){var j=rnd(i+1),t=p[i];p[i]=p[j];p[j]=t}
+    var ok=true;for(i=0;i<n;i++){if(p[i]===i||p[p[i]]===i){ok=false;break}}
+    if(ok)return p;
+  }
+}
+
+/* ---- Participant ---- */
+function reveal(){
+  var v=$('myname').value.trim().toLowerCase(),m=$('pMsg');m.textContent='';
+  if(!v){m.textContent='Please type your name.';return}
+  if(!S.pairs){m.textContent='The draw has not been done yet. Ask the administrator.';return}
+  var idx=S.names.findIndex(function(n){return n.trim().toLowerCase()===v});
+  if(idx<0){m.textContent='Name not found. Check the spelling.';return}
+  if(S.seen[idx]){m.textContent='This name has already seen its result. Ask the administrator if there is a problem.';return}
+  S.seen[idx]=true;save();
+  $('target').textContent=S.names[S.pairs[idx]];
+  $('playerBox').hidden=true;$('resultBox').hidden=false;
+}
+function hideResult(){$('target').textContent='';go('player')}
+
+/* ---- Admin ---- */
+function renderAdmin(){
+  var d=$('adminBody');
+  if(S.pairs){
+    var n=S.names.length,seen=Object.keys(S.seen).length;
+    d.innerHTML='<h2>Draw is ready ✓</h2><p>'+n+' participants. '+seen+' of '+n+' have seen their result.</p>'+
+    '<button onclick="reshuffle()">Reshuffle (resets who has seen)</button>'+
+    '<button class="ghost" onclick="go(\'review\')">Review pairing results</button>'+
+    '<button class="ghost" onclick="startOver()">Start over (new participants)</button><div class="msg" id="aMsg"></div>';
+    return;
+  }
+  d.innerHTML='<h2>Set up the draw</h2><label for="cnt">How many participants? (3–60)</label>'+
+  '<input id="cnt" type="number" min="3" max="60" inputmode="numeric" value="'+(S.names.length||'')+'">'+
+  '<button class="ghost" onclick="makeFields()">Create name fields</button><div id="fields"></div><div class="msg" id="aMsg"></div>';
+  if(S.names.length)makeFields();
+}
+function makeFields(){
+  var n=parseInt($('cnt').value,10),m=$('aMsg');
+  if(!(n>=3&&n<=60)){m.textContent='Enter a number between 3 and 60.';return}
+  m.textContent='';var old=[].slice.call(document.querySelectorAll('.nm')).map(function(i){return i.value});
+  var h='';for(var i=0;i<n;i++)h+='<input class="nm" placeholder="Participant '+(i+1)+'" value="'+esc(old[i]!==undefined?old[i]:(S.names[i]||''))+'">';
+  $('fields').innerHTML=h+'<button onclick="doShuffle()">🔀 Shuffle</button>';
+}
+function doShuffle(){
+  var names=[].slice.call(document.querySelectorAll('.nm')).map(function(i){return i.value.trim()}),m=$('aMsg');
+  if(names.some(function(x){return !x})){m.textContent='Every participant needs a name.';return}
+  var low=names.map(function(x){return x.toLowerCase()});
+  if(low.some(function(x,i){return low.indexOf(x)!==i})){m.textContent='Names must be unique (add an initial if two people share one).';return}
+  S={names:names,pairs:draw(names.length),seen:{}};save();renderAdmin();
+}
+function reshuffle(){
+  if(!confirm('Reshuffle? Previous pairings are discarded and everyone can look again.'))return;
+  S.pairs=draw(S.names.length);S.seen={};save();renderAdmin();
+  $('aMsg').className='msg ok';$('aMsg').textContent='Reshuffled ✓';
+}
+function startOver(){
+  if(!confirm('Delete all participants and results?'))return;
+  S=blank();save();renderAdmin();
+}
+
+/* ---- Review (separate code) ---- */
+function renderReview(){
+  var d=$('reviewBody');
+  if(!S.pairs){d.innerHTML='<h2>Pairing results</h2><p>No draw yet.</p>';return}
+  var h='<h2>Pairing results</h2><ul>';
+  S.names.forEach(function(nm,i){
+    h+='<li><span>'+esc(nm)+' → <b>'+esc(S.names[S.pairs[i]])+'</b></span><span class="tag">'+(S.seen[i]?'seen':'not seen')+'</span></li>'});
+  d.innerHTML=h+'</ul>';
+}
+</script>
+</body>
+</html>
